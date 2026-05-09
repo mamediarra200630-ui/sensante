@@ -74,13 +74,13 @@
               <span class="text-gray-700">Maux de tete</span>
             </label>
             <label class="flex items-center">
-  <input type="checkbox" id="frissons" class="rounded text-blue-600 mr-2">
-  <span class="text-gray-700">Frissons</span>
-</label>
-<label class="flex items-center">
-  <input type="checkbox" id="nausee" class="rounded text-blue-600 mr-2">
-  <span class="text-gray-700">Nausee</span>
-</label>
+              <input type="checkbox" id="frissons" class="rounded text-blue-600 mr-2">
+              <span class="text-gray-700">Frissons</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" id="nausee" class="rounded text-blue-600 mr-2">
+              <span class="text-gray-700">Nausee</span>
+            </label>
           </div>
         </div>
 
@@ -118,6 +118,10 @@
       </div>
 
     </div>
+
+    <!-- Historique -->
+    <div id="historique-section" class="mt-6"></div>
+
   </main>
 
   <!-- Footer -->
@@ -127,9 +131,9 @@
 
   <script>
   const API_URL = "http://localhost:8000";
+  const historique = [];
 
   async function diagnostiquer() {
-    // 1. Récupérer les valeurs du formulaire
     const patient = {
       age: parseInt(document.getElementById("age").value),
       sexe: document.getElementById("sexe").value,
@@ -138,22 +142,19 @@
       toux: document.getElementById("toux").checked,
       fatigue: document.getElementById("fatigue").checked,
       maux_tete: document.getElementById("maux_tete").checked,
-      region: document.getElementById("region").value,
       frissons: document.getElementById("frissons").checked,
-nausee: document.getElementById("nausee").checked,
+      nausee: document.getElementById("nausee").checked,
+      region: document.getElementById("region").value
     };
 
-    // 2. Vérifier les champs obligatoires
     if (!patient.age || !patient.temperature || !patient.tension_sys) {
       afficherErreur("Veuillez remplir tous les champs.");
       return;
     }
 
-    // 3. Afficher le spinner
     afficherChargement();
 
     try {
-      // 4. Envoyer la requête à l'API
       const response = await fetch(API_URL + "/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -183,10 +184,10 @@ nausee: document.getElementById("nausee").checked,
 
   function afficherResultat(r) {
     const couleurs = {
-      palu:   { bg: "bg-red-100",    text: "text-red-800",    bar: "bg-red-500",    badge: "bg-red-500" },
-      grippe: { bg: "bg-orange-100", text: "text-orange-800", bar: "bg-orange-500", badge: "bg-orange-500" },
-      typh:   { bg: "bg-yellow-100", text: "text-yellow-800", bar: "bg-yellow-500", badge: "bg-yellow-500" },
-      sain:   { bg: "bg-green-100",  text: "text-green-800",  bar: "bg-green-500",  badge: "bg-green-500" }
+      paludisme: { bg: "bg-red-100",    text: "text-red-800",    bar: "bg-red-500",    badge: "bg-red-500",    icone: "🦟" },
+      grippe:    { bg: "bg-orange-100", text: "text-orange-800", bar: "bg-orange-500", badge: "bg-orange-500", icone: "❄️" },
+      typhoide:  { bg: "bg-yellow-100", text: "text-yellow-800", bar: "bg-yellow-500", badge: "bg-yellow-500", icone: "🤒" },
+      sain:      { bg: "bg-green-100",  text: "text-green-800",  bar: "bg-green-500",  badge: "bg-green-500",  icone: "💚" }
     };
 
     const c = couleurs[r.diagnostic] || couleurs["sain"];
@@ -197,7 +198,7 @@ nausee: document.getElementById("nausee").checked,
         <h2 class="text-xl font-bold text-gray-800 mb-4">Resultat</h2>
         <div class="${c.bg} rounded-lg p-4 mb-4">
           <p class="text-sm text-gray-600">Diagnostic :</p>
-          <p class="text-2xl font-bold ${c.text} uppercase mt-1">${r.diagnostic}</p>
+          <p class="text-2xl font-bold ${c.text} uppercase mt-1">${c.icone} ${r.diagnostic}</p>
         </div>
         <div class="mb-4">
           <div class="flex justify-between mb-1">
@@ -216,6 +217,42 @@ nausee: document.getElementById("nausee").checked,
           <p class="text-sm text-gray-700">${r.message}</p>
         </div>
       </div>`;
+
+    // Ajouter à l'historique
+    historique.unshift({
+      diagnostic: r.diagnostic,
+      icone: c.icone,
+      probabilite: pct
+    });
+    if (historique.length > 5) historique.pop();
+    afficherHistorique();
+  }
+
+  function afficherHistorique() {
+    let html = `
+      <div class="bg-white rounded-xl shadow-md p-6">
+        <h3 class="text-lg font-bold text-gray-800 mb-3">📋 Historique des consultations</h3>
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-gray-500 border-b">
+              <th class="text-left pb-2">#</th>
+              <th class="text-left pb-2">Diagnostic</th>
+              <th class="text-left pb-2">Probabilite</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+    historique.forEach((h, i) => {
+      html += `
+            <tr class="border-b last:border-0">
+              <td class="py-2 text-gray-400">${i + 1}</td>
+              <td class="py-2 font-medium">${h.icone} ${h.diagnostic}</td>
+              <td class="py-2 text-gray-600">${h.probabilite}%</td>
+            </tr>`;
+    });
+
+    html += `</tbody></table></div>`;
+    document.getElementById("historique-section").innerHTML = html;
   }
 
   function afficherErreur(msg) {
@@ -225,7 +262,7 @@ nausee: document.getElementById("nausee").checked,
         <p class="text-red-500 text-sm mt-2">Verifiez votre connexion et reessayez.</p>
       </div>`;
   }
-</script>
+  </script>
 
 </body>
 </html>

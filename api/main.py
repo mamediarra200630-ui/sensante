@@ -1,6 +1,8 @@
 # api/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 import joblib
 import numpy as np
@@ -39,11 +41,23 @@ class DiagnosticOutput(BaseModel):
     confiance: str
     message: str
 
+class ExplainInput(BaseModel):
+    diagnostic: str = Field(..., description="Diagnostic predit par le modele")
+    probabilite: float = Field(..., description="Probabilite du diagnostic")
+    age: int = Field(...)
+    sexe: str = Field(...)
+    temperature: float = Field(...)
+    region: str = Field(...)
+
+class ExplainOutput(BaseModel):
+    explication: str = Field(..., description="Explication en francais")
+    modele_llm: str = Field(default="llama-3.1-8b-instant")
+
 # --- Application FastAPI ---
 app = FastAPI(
     title="SenSante API",
     description="Assistant pre-diagnostic medical pour le Senegal",
-    version="0.2.0"
+    version="0.3.0"
 )
 
 # --- CORS ---
@@ -63,6 +77,16 @@ le_region = joblib.load("models/encoder_region.pkl")
 feature_cols = joblib.load("models/feature_cols.pkl")
 print(f"Modele charge : {type(model).__name__}")
 print(f"Classes : {list(model.classes_)}")
+
+# --- System prompt medical ---
+SYSTEM_PROMPT = """Tu es un assistant medical senegalais.
+Tu recois un diagnostic et des donnees patient.
+Explique le resultat en francais simple,
+comme un medecin parlerait a son patient.
+Sois rassurant mais recommande toujours une consultation medicale.
+Maximum 3 phrases.
+Ne fais JAMAIS de diagnostic toi-meme.
+Tu expliques uniquement le diagnostic fourni."""
 
 # --- Routes ---
 @app.get("/health")
@@ -120,30 +144,7 @@ def predict(patient: PatientInput):
         confiance=confiance,
         message=messages.get(diagnostic, "Consultez un medecin.")
     )
-    # --- Schemas pour /explain ---
-class ExplainInput(BaseModel):
-    diagnostic: str = Field(..., description="Diagnostic predit par le modele")
-    probabilite: float = Field(..., description="Probabilite du diagnostic")
-    age: int = Field(...)
-    sexe: str = Field(...)
-    temperature: float = Field(...)
-    region: str = Field(...)
 
-class ExplainOutput(BaseModel):
-    explication: str = Field(..., description="Explication en francais")
-    modele_llm: str = Field(default="llama-3.1-8b-instant")
-
-# --- System prompt medical ---
-SYSTEM_PROMPT = """Tu es un assistant medical senegalais.
-Tu recois un diagnostic et des donnees patient.
-Explique le resultat en francais simple,
-comme un medecin parlerait a son patient.
-Sois rassurant mais recommande toujours une consultation medicale.
-Maximum 3 phrases.
-Ne fais JAMAIS de diagnostic toi-meme.
-Tu expliques uniquement le diagnostic fourni."""
-
-# --- Route /explain ---
 @app.post("/explain", response_model=ExplainOutput)
 def explain(data: ExplainInput):
     if not groq_client:
@@ -175,3 +176,11 @@ def explain(data: ExplainInput):
         explication = f"Erreur lors de l'appel au LLM : {str(e)}"
 
     return ExplainOutput(explication=explication)
+
+# --- Servir le frontend ---
+app.mount("/static", StaticFiles(directory="frontend"), name="static")
+
+@app.get("/")
+def serve_frontend():
+    """Servir la page d'accueil."""
+    return FileResponse("frontend/index.html")

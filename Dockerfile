@@ -9,13 +9,12 @@ RUN pip install --no-cache-dir huggingface_hub hf_xet
 COPY . .
 
 RUN mkdir -p models && python -c "
-from huggingface_hub import HfApi
-api = HfApi(token='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')
+import os
+from huggingface_hub import hf_hub_download
+token = os.environ.get('HF_TOKEN', '')
 files = ['model.pkl','encoder_sexe.pkl','encoder_region.pkl','feature_cols.pkl']
 for f in files:
-    api.hf_hub_download = None
-    from huggingface_hub import hf_hub_download
-    hf_hub_download(repo_id='Didi66/sensante', filename='models/'+f, repo_type='space', local_dir='.', token='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')
+    hf_hub_download(repo_id='Didi66/sensante', filename='models/'+f, repo_type='space', local_dir='.', token=token)
     print('OK: '+f)
 "
 

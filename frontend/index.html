@@ -24,7 +24,6 @@
       <div id="form-section" class="bg-white rounded-xl shadow-md p-6">
         <h2 class="text-xl font-bold text-gray-800 mb-4">Symptomes du patient</h2>
 
-        <!-- Age -->
         <div class="mb-3">
           <label class="block text-sm font-medium text-gray-700 mb-1">Age</label>
           <input type="number" id="age"
@@ -32,7 +31,6 @@
             placeholder="Ex: 28" min="0" max="120">
         </div>
 
-        <!-- Sexe -->
         <div class="mb-3">
           <label class="block text-sm font-medium text-gray-700 mb-1">Sexe</label>
           <select id="sexe" class="w-full border border-gray-300 rounded-lg p-2">
@@ -41,7 +39,6 @@
           </select>
         </div>
 
-        <!-- Temperature -->
         <div class="mb-3">
           <label class="block text-sm font-medium text-gray-700 mb-1">Temperature (C)</label>
           <input type="number" id="temperature" step="0.1"
@@ -49,7 +46,6 @@
             placeholder="Ex: 38.5" min="35" max="42">
         </div>
 
-        <!-- Tension -->
         <div class="mb-3">
           <label class="block text-sm font-medium text-gray-700 mb-1">Tension systolique</label>
           <input type="number" id="tension_sys"
@@ -57,7 +53,6 @@
             placeholder="Ex: 120" min="60" max="250">
         </div>
 
-        <!-- Symptomes -->
         <div class="mb-3">
           <label class="block text-sm font-medium text-gray-700 mb-2">Symptomes</label>
           <div class="space-y-2">
@@ -84,7 +79,6 @@
           </div>
         </div>
 
-        <!-- Region -->
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-1">Region</label>
           <select id="region" class="w-full border border-gray-300 rounded-lg p-2">
@@ -101,7 +95,6 @@
           </select>
         </div>
 
-        <!-- Bouton -->
         <button onclick="diagnostiquer()" id="btn-diag"
           class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition duration-200 shadow-md">
           Diagnostiquer
@@ -119,18 +112,16 @@
 
     </div>
 
-    <!-- Historique -->
     <div id="historique-section" class="mt-6"></div>
 
   </main>
 
-  <!-- Footer -->
   <footer class="text-center text-gray-400 text-sm py-4">
-    SenSante v0.4 - ESP/UCAD - L2 GLSI 2026
+    SenSante v1.0 - ESP/UCAD - L2 GLSI 2026
   </footer>
 
   <script>
-  const API_URL = "http://localhost:8000";
+  const API_URL = "https://didi66-sensante.hf.space";
   const historique = [];
 
   async function diagnostiquer() {
@@ -218,11 +209,7 @@
         </div>
       </div>`;
 
-    historique.unshift({
-      diagnostic: r.diagnostic,
-      icone: c.icone,
-      probabilite: pct
-    });
+    historique.unshift({ diagnostic: r.diagnostic, icone: c.icone, probabilite: pct });
     if (historique.length > 5) historique.pop();
     afficherHistorique();
     demanderExplication(r);
@@ -283,7 +270,6 @@
             </tr>
           </thead>
           <tbody>`;
-
     historique.forEach((h, i) => {
       html += `
             <tr class="border-b last:border-0">
@@ -292,7 +278,6 @@
               <td class="py-2 text-gray-600">${h.probabilite}%</td>
             </tr>`;
     });
-
     html += `</tbody></table></div>`;
     document.getElementById("historique-section").innerHTML = html;
   }
